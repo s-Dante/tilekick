@@ -7,135 +7,21 @@ datasource db {
   provider = "mysql"
 }
 
-model Achievement {
-  id              String             @id
-  key             String             @unique
-  name            String
-  description     String
-  icon            String
-  rarity          Achievement_rarity
-  condition       String             @db.LongText
-  createdAt       DateTime           @default(now())
-  UserAchievement UserAchievement[]
-}
-
-model ChatMessage {
-  id        String   @id
-  matchId   String
-  senderId  String
-  message   String   @db.Text
-  createdAt DateTime @default(now())
-  Match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  User      User     @relation(fields: [senderId], references: [id])
-
-  @@index([matchId, createdAt])
-  @@index([senderId], map: "ChatMessage_senderId_fkey")
-}
-
-model Friendship {
-  id                             String            @id
-  userId                         String
-  friendId                       String
-  status                         Friendship_status @default(PENDING)
-  createdAt                      DateTime          @default(now())
-  acceptedAt                     DateTime?
-  User_Friendship_friendIdToUser User              @relation("Friendship_friendIdToUser", fields: [friendId], references: [id], onDelete: Cascade)
-  User_Friendship_userIdToUser   User              @relation("Friendship_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, friendId])
-  @@index([friendId])
-  @@index([userId])
-}
-
-model Leaderboard {
-  id        String             @id
-  userId    String
-  period    Leaderboard_period
-  year      Int
-  week      Int?
-  month     Int?
-  rating    Int
-  wins      Int
-  rank      Int
-  createdAt DateTime           @default(now())
-
-  @@unique([userId, period, year, week, month])
-  @@index([period, year, week, month, rating])
-}
-
-model Match {
-  id                         String            @id
-  player1Id                  String
-  player2Id                  String?
-  winnerId                   String?
-  mode                       Match_mode        @default(MULTIPLAYER)
-  difficulty                 Match_difficulty?
-  scenario                   String            @default("stadium")
-  state                      String            @db.LongText
-  status                     Match_status      @default(WAITING)
-  finalScore                 String?           @db.LongText
-  turnCount                  Int               @default(0)
-  createdAt                  DateTime          @default(now())
-  updatedAt                  DateTime
-  startedAt                  DateTime?
-  finishedAt                 DateTime?
-  ChatMessage                ChatMessage[]
-  User_Match_player1IdToUser User              @relation("Match_player1IdToUser", fields: [player1Id], references: [id])
-  User_Match_player2IdToUser User?             @relation("Match_player2IdToUser", fields: [player2Id], references: [id])
-  User_Match_winnerIdToUser  User?             @relation("Match_winnerIdToUser", fields: [winnerId], references: [id])
-  MatchHistory               MatchHistory[]
-
-  @@index([createdAt])
-  @@index([player1Id])
-  @@index([player2Id])
-  @@index([status])
-  @@index([winnerId], map: "Match_winnerId_fkey")
-}
-
-model MatchHistory {
-  id        String   @id
-  matchId   String
-  turn      Int
-  playerId  String
-  action    String
-  data      String   @db.LongText
-  success   Boolean
-  result    String?  @db.LongText
-  timestamp DateTime @default(now())
-  Match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
-
-  @@index([matchId, turn])
-}
-
-model Report {
-  id                           String        @id
-  reporterId                   String
-  reportedId                   String
-  matchId                      String?
-  reason                       String
-  description                  String        @db.Text
-  status                       Report_status @default(PENDING)
-  createdAt                    DateTime      @default(now())
-  resolvedAt                   DateTime?
-  User_Report_reportedIdToUser User          @relation("Report_reportedIdToUser", fields: [reportedId], references: [id])
-  User_Report_reporterIdToUser User          @relation("Report_reporterIdToUser", fields: [reporterId], references: [id])
-
-  @@index([reportedId])
-  @@index([reporterId], map: "Report_reporterId_fkey")
-  @@index([status])
-}
+// ─── Usuarios ─────────────────────────────────────────────────────────────
 
 model User {
-  id                                   String            @id
-  email                                String            @unique
-  name                                 String
-  avatar                               String?
-  provider                             String
-  providerId                           String
-  passwordHash                         String?
-  createdAt                            DateTime          @default(now())
-  updatedAt                            DateTime
-  lastLogin                            DateTime?
+  id           String   @id
+  email        String   @unique
+  username     String   @unique
+  name         String
+  avatar       String?
+  provider     String
+  providerId   String
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  lastLogin    DateTime?
+
   ChatMessage                          ChatMessage[]
   Friendship_Friendship_friendIdToUser Friendship[]      @relation("Friendship_friendIdToUser")
   Friendship_Friendship_userIdToUser   Friendship[]      @relation("Friendship_userIdToUser")
@@ -147,37 +33,11 @@ model User {
   UserAchievement                      UserAchievement[]
   UserPreferences                      UserPreferences?
   UserStats                            UserStats?
+  PasswordReset                        PasswordReset[]
 
   @@index([email])
+  @@index([username])
   @@index([provider, providerId])
-}
-
-model UserAchievement {
-  id            String      @id
-  userId        String
-  achievementId String
-  unlockedAt    DateTime    @default(now())
-  Achievement   Achievement @relation(fields: [achievementId], references: [id])
-  User          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, achievementId])
-  @@index([achievementId], map: "UserAchievement_achievementId_fkey")
-  @@index([userId])
-}
-
-model UserPreferences {
-  id                 String   @id
-  userId             String   @unique
-  emailNotifications Boolean  @default(true)
-  pushNotifications  Boolean  @default(true)
-  soundEnabled       Boolean  @default(true)
-  musicEnabled       Boolean  @default(true)
-  defaultScenario    String   @default("stadium")
-  profilePublic      Boolean  @default(true)
-  showOnlineStatus   Boolean  @default(true)
-  preferences        String?  @db.LongText
-  updatedAt          DateTime
-  User               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserStats {
@@ -197,54 +57,187 @@ model UserStats {
   longestWinStreak Int      @default(0)
   totalPlayTime    Int      @default(0)
   updatedAt        DateTime
-  User             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([rating])
 }
 
-enum Leaderboard_period {
-  WEEKLY
-  MONTHLY
-  ALL_TIME
+model UserPreferences {
+  id                 String   @id
+  userId             String   @unique
+  emailNotifications Boolean  @default(true)
+  pushNotifications  Boolean  @default(true)
+  soundEnabled       Boolean  @default(true)
+  musicEnabled       Boolean  @default(true)
+  defaultScenario    String   @default("stadium")
+  profilePublic      Boolean  @default(true)
+  showOnlineStatus   Boolean  @default(true)
+  preferences        String?  @db.LongText
+  updatedAt          DateTime
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-enum Friendship_status {
-  PENDING
-  ACCEPTED
-  BLOCKED
+// ─── Logros ───────────────────────────────────────────────────────────────
+
+model Achievement {
+  id          String   @id
+  key         String   @unique
+  name        String
+  description String
+  icon        String
+  rarity      String   // Validar contra AchievementRarity
+  condition   String   @db.LongText
+  createdAt   DateTime @default(now())
+
+  UserAchievement UserAchievement[]
 }
 
-enum Match_mode {
-  SINGLE_PLAYER
-  MULTIPLAYER
-  LOCAL
-  TOURNAMENT
+model UserAchievement {
+  id            String   @id
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  Achievement Achievement @relation(fields: [achievementId], references: [id])
+  User        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([achievementId], map: "UserAchievement_achievementId_fkey")
+  @@index([userId])
 }
 
-enum Achievement_rarity {
-  COMMON
-  RARE
-  EPIC
-  LEGENDARY
+// ─── Partidas ─────────────────────────────────────────────────────────────
+
+model Match {
+  id         String    @id
+  player1Id  String
+  player2Id  String?
+  winnerId   String?
+  mode       String    @default("MULTIPLAYER") // Validar contra MatchMode
+  difficulty String?                           // Validar contra MatchDifficulty
+  scenario   String    @default("stadium")
+  state      String    @db.LongText
+  status     String    @default("WAITING")     // Validar contra MatchStatus
+  finalScore String?   @db.LongText
+  turnCount  Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  ChatMessage  ChatMessage[]
+  MatchHistory MatchHistory[]
+
+  User_Match_player1IdToUser User  @relation("Match_player1IdToUser", fields: [player1Id], references: [id])
+  User_Match_player2IdToUser User? @relation("Match_player2IdToUser", fields: [player2Id], references: [id])
+  User_Match_winnerIdToUser  User? @relation("Match_winnerIdToUser", fields: [winnerId], references: [id])
+
+  @@index([createdAt])
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([status])
+  @@index([winnerId], map: "Match_winnerId_fkey")
 }
 
-enum Match_difficulty {
-  EASY
-  MEDIUM
-  HARD
+model MatchHistory {
+  id        String   @id
+  matchId   String
+  turn      Int
+  playerId  String
+  action    String   // Validar contra ActionType
+  data      String   @db.LongText
+  success   Boolean
+  result    String?  @db.LongText
+  timestamp DateTime @default(now())
+
+  Match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, turn])
 }
 
-enum Report_status {
-  PENDING
-  REVIEWING
-  RESOLVED
-  DISMISSED
+model ChatMessage {
+  id        String   @id
+  matchId   String
+  senderId  String
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+
+  Match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  User  User  @relation(fields: [senderId], references: [id])
+
+  @@index([matchId, createdAt])
+  @@index([senderId], map: "ChatMessage_senderId_fkey")
 }
 
-enum Match_status {
-  WAITING
-  PLAYING
-  PAUSED
-  FINISHED
-  ABANDONED
+// ─── Social ───────────────────────────────────────────────────────────────
+
+model Friendship {
+  id        String    @id
+  userId    String
+  friendId  String
+  status    String    @default("PENDING") // Validar contra FriendshipStatus
+  createdAt DateTime  @default(now())
+  acceptedAt DateTime?
+
+  User_Friendship_friendIdToUser User @relation("Friendship_friendIdToUser", fields: [friendId], references: [id], onDelete: Cascade)
+  User_Friendship_userIdToUser   User @relation("Friendship_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([friendId])
+  @@index([userId])
+}
+
+model Report {
+  id          String    @id
+  reporterId  String
+  reportedId  String
+  matchId     String?
+  reason      String
+  description String    @db.Text
+  status      String    @default("PENDING") // Validar contra ReportStatus
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  User_Report_reportedIdToUser User @relation("Report_reportedIdToUser", fields: [reportedId], references: [id])
+  User_Report_reporterIdToUser User @relation("Report_reporterIdToUser", fields: [reporterId], references: [id])
+
+  @@index([reportedId])
+  @@index([reporterId], map: "Report_reporterId_fkey")
+  @@index([status])
+}
+
+// ─── Recuperación de contraseña ───────────────────────────────────────────
+
+model PasswordReset {
+  id        String   @id
+  userId    String
+  token     String   @unique    // OTP de 6 caracteres
+  expiresAt DateTime            // Expira 15 min después de crearse
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ─── Ranking ──────────────────────────────────────────────────────────────
+
+model Leaderboard {
+  id        String   @id
+  userId    String
+  period    String   // Validar contra LeaderboardPeriod
+  year      Int
+  week      Int?
+  month     Int?
+  rating    Int
+  wins      Int
+  rank      Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, period, year, week, month])
+  @@index([period, year, week, month, rating])
 }

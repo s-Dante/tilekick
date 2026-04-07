@@ -1,157 +1,162 @@
 "use client"
 
-import { SubmitHandler, useForm } from "react-hook-form";
-import {
-    Input, Toaster, Button, Label
-} from "@/components/index";
-import { toast } from "sonner";
-import Link from "next/link";
+import { useState } from "react"
+import { SubmitHandler, useForm } from "react-hook-form"
+import { Input, Toaster, Button, Label } from "@/components/index"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
-interface RegisterFormInouts {
-    name: string;
-    father_lastname: string;
-    mother_lastname: string;
-    username: string;
-    email: string;
-    password: string;
-    confirm_password: string;
+interface RegisterFormInputs {
+    name: string
+    father_lastname: string
+    mother_lastname: string
+    username: string
+    email: string
+    password: string
+    confirm_password: string
 }
 
 export default function RegisterPage() {
-    const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormInouts>();
+    const router = useRouter()
+    const [loading, setLoading] = useState(false)
+    const { register, handleSubmit, formState: { errors }, watch } = useForm<RegisterFormInputs>()
 
-    const onSubmit: SubmitHandler<RegisterFormInouts> = (data) => {
-        console.log(data);
-        toast.success("Registro exitoso");
-    };
+    const onSubmit: SubmitHandler<RegisterFormInputs> = async (data) => {
+        setLoading(true)
+        try {
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+
+            const json = await res.json()
+
+            if (!res.ok) {
+                toast.error(json.error ?? "Error al registrarse")
+                return
+            }
+
+            toast.success("¡Cuenta creada exitosamente!")
+            router.push("/home")
+        } catch {
+            toast.error("Error de conexión con el servidor")
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const onError = () => {
-        if (errors.name) {
-            toast.error(errors.name.message);
-        } else if (errors.father_lastname) {
-            toast.error(errors.father_lastname.message);
-        } else if (errors.mother_lastname) {
-            toast.error(errors.mother_lastname.message);
-        } else if (errors.username) {
-            toast.error(errors.username.message);
-        } else if (errors.email) {
-            toast.error(errors.email.message);
-        } else if (errors.password) {
-            toast.error(errors.password.message);
-        } else if (errors.confirm_password) {
-            toast.error(errors.confirm_password.message);
-        }
-    };
+        const firstError = Object.values(errors)[0]
+        if (firstError?.message) toast.error(firstError.message)
+    }
 
     return (
-        <form action="" onSubmit={handleSubmit(onSubmit, onError)}>
-            <Toaster position="top-center" richColors />
-            <Label htmlFor="name">Nombre</Label>
-            <Input
-                type="text"
-                id="name"
-                {... (register("name", {
-                    required: {
-                        value: true,
-                        message: "Necesitas ingresar tu nombre",
-                    },
-                }))}
-            ></Input>
+        <Card className="w-full max-w-md">
+            <CardHeader>
+                <CardTitle className="text-3xl">Crear cuenta</CardTitle>
+                <CardDescription className="text-lg">Completa tus datos para registrarte</CardDescription>
+            </CardHeader>
 
-            <Label htmlFor="father_lastname">Apellido Paterno</Label>
-            <Input
-                type="text"
-                id="father_lastname"
-                {... (register("father_lastname", {
-                    required: {
-                        value: true,
-                        message: "Necesitas ingresar tu apellido paterno",
-                    },
-                }))}
-            ></Input>
+            <form onSubmit={handleSubmit(onSubmit, onError)}>
+                <Toaster position="top-center" richColors />
 
-            <Label htmlFor="mother_lastname">Apellido Materno</Label>
-            <Input
-                type="text"
-                id="mother_lastname"
-                {... (register("mother_lastname", {
-                    required: {
-                        value: false,
-                        message: "Necesitas ingresar tu apellido materno",
-                    },
-                }))}
-            ></Input>
+                <CardContent className="space-y-4">
+                    <div className="space-y-1.5">
+                        <Label htmlFor="name">Nombre</Label>
+                        <Input
+                            type="text" id="name" disabled={loading}
+                            {...register("name", {
+                                required: { value: true, message: "Necesitas ingresar tu nombre" },
+                            })}
+                        />
+                    </div>
 
-            <Label htmlFor="username">Username</Label>
-            <Input
-                type="text"
-                id="username"
-                {... (register("username", {
-                    required: {
-                        value: true,
-                        message: "Necesitas ingresar un nombre de usuario",
-                    },
-                }))}
-            ></Input>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="father_lastname">Ap. Paterno</Label>
+                            <Input
+                                type="text" id="father_lastname" disabled={loading}
+                                {...register("father_lastname", {
+                                    required: { value: true, message: "Necesitas ingresar tu apellido paterno" },
+                                })}
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="mother_lastname">Ap. Materno</Label>
+                            <Input
+                                type="text" id="mother_lastname" disabled={loading}
+                                {...register("mother_lastname", { required: false })}
+                            />
+                        </div>
+                    </div>
 
-            <Label htmlFor="email">Correo</Label>
-            <Input
-                type="email"
-                id="email"
-                {... (register("email", {
-                    required: {
-                        value: true,
-                        message: "Necesitas ingresar tu correo",
-                    },
-                }))}
-            ></Input>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="username">Username</Label>
+                        <Input
+                            type="text" id="username" disabled={loading}
+                            {...register("username", {
+                                required: { value: true, message: "Necesitas ingresar un nombre de usuario" },
+                                pattern: {
+                                    value: /^[a-zA-Z0-9_.]{3,20}$/,
+                                    message: "Solo letras, números, _ y . (3-20 caracteres)",
+                                },
+                            })}
+                        />
+                    </div>
 
-            <Label htmlFor="password">Contraseña</Label>
-            <Input
-                type="password"
-                id="password"
-                {... (register("password", {
-                    required: {
-                        value: true,
-                        message: "Necesitas ingresar tu contraseña",
-                    },
-                    minLength: {
-                        value: 8,
-                        message: "La contraseña debe tener al menos 8 caracteres",
-                    },
-                    pattern: {
-                        value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d()\-_.!¡?¿*/[\]]{8,}$/,
-                        message: "La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial",
-                    },
-                }))}
-            ></Input>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="email">Correo</Label>
+                        <Input
+                            type="email" id="email" disabled={loading}
+                            {...register("email", {
+                                required: { value: true, message: "Necesitas ingresar tu correo" },
+                            })}
+                        />
+                    </div>
 
-            <Label htmlFor="confirm_password">Confirmar contraseña</Label>
-            <Input
-                type="password"
-                id="confirm_password"
-                {... (register("confirm_password", {
-                    required: {
-                        value: true,
-                        message: "Necesitas ingresar tu contraseña de nuevo para confirmarla",
-                    },
-                    minLength: {
-                        value: 8,
-                        message: "La contraseña debe tener al menos 8 caracteres",
-                    },
-                    pattern: {
-                        value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d()\-_.!¡?¿*/[\]]{8,}$/,
-                        message: "La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial",
-                    },
-                }))}
-            ></Input>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="password">Contraseña</Label>
+                        <Input
+                            type="password" id="password" disabled={loading}
+                            {...register("password", {
+                                required: { value: true, message: "Necesitas ingresar tu contraseña" },
+                                minLength: { value: 8, message: "La contraseña debe tener al menos 8 caracteres" },
+                                pattern: {
+                                    value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d()\-_.!¡?¿*/[\]]{8,}$/,
+                                    message: "Debe contener mayúscula, minúscula, número y carácter especial",
+                                },
+                            })}
+                        />
+                    </div>
 
-            <Link href="/login">
-                <span>¿Ya tienes una cuenta? </span>
-                <Button variant="link" className="cursor-pointer">Inicia sesión</Button>
-            </Link>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="confirm_password">Confirmar contraseña</Label>
+                        <Input
+                            type="password" id="confirm_password" disabled={loading}
+                            {...register("confirm_password", {
+                                required: { value: true, message: "Confirma tu contraseña" },
+                                validate: (val) =>
+                                    val === watch("password") || "Las contraseñas no coinciden",
+                            })}
+                        />
+                    </div>
+                </CardContent>
 
-            <Button type="submit" className="cursor-pointer">Registrarse</Button>
-        </form>
-    );
+                <CardFooter className="flex flex-col gap-3 mt-8">
+                    <Button type="submit" className="w-full cursor-pointer text-xl" disabled={loading}>
+                        {loading ? "Creando cuenta..." : "Registrarse"}
+                    </Button>
+                    <p className="text-md text-muted-foreground text-center">
+                        ¿Ya tienes una cuenta?{" "}
+                        <Link href="/login">
+                            <Button variant="link" className="h-auto p-0 text-md cursor-pointer">Inicia sesión</Button>
+                        </Link>
+                    </p>
+                </CardFooter>
+            </form>
+        </Card>
+    )
 }
