@@ -35,7 +35,7 @@ export default function LoginPage() {
             }
 
             toast.success("¡Bienvenido de vuelta!")
-            router.push("/home")
+            window.location.href = "/home"
         } catch {
             toast.error("Error de conexión con el servidor")
         } finally {

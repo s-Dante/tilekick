@@ -70,6 +70,17 @@ const THEMES = [
 
 export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { theme, setTheme } = useTheme()
+    const [loggingOut, setLoggingOut] = React.useState(false)
+
+    const handleLogout = async () => {
+        setLoggingOut(true)
+        try {
+            await fetch("/api/auth/logout", { method: "POST" })
+        } catch {
+            // Incluso si falla el fetch, redirigir a login
+        }
+        window.location.href = "/login"
+    }
 
     return (
         <Sidebar collapsible="offcanvas" variant="floating" {...props}>
@@ -251,9 +262,13 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
 
                                 <DropdownMenuSeparator />
 
-                                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10 text-lg">
+                                <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10 text-lg cursor-pointer"
+                                    onClick={handleLogout}
+                                    disabled={loggingOut}
+                                >
                                     <LogOut className="h-8 w-8 mr-2" />
-                                    Cerrar sesión
+                                    {loggingOut ? "Cerrando..." : "Cerrar sesión"}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

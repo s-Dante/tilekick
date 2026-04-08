@@ -6,7 +6,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/database/prisma"
 import { verifyPassword } from "@/lib/auth/password"
-import { setSessionCookie } from "@/lib/auth/cookies"
+import { createToken } from "@/lib/auth/jwt"
+
+const COOKIE_NAME = "tk_session"
 
 export async function POST(req: NextRequest) {
     try {
@@ -44,13 +46,23 @@ export async function POST(req: NextRequest) {
             data: { lastLogin: new Date(), updatedAt: new Date() },
         })
 
-        // ── Establecer sesión ─────────────────────────────────────────
-        await setSessionCookie({ userId: user.id, email: user.email, username: user.username })
+        // ── Establecer sesión (cookie directa en response) ───────────
+        const token = createToken({ userId: user.id, email: user.email, username: user.username })
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             message: "Login exitoso",
             user: { id: user.id, email: user.email, username: user.username, name: user.name },
         })
+
+        response.cookies.set(COOKIE_NAME, token, {
+            httpOnly: true,
+            secure:   process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path:     "/",
+            maxAge:   7 * 24 * 60 * 60,
+        })
+
+        return response
 
     } catch (error) {
         console.error("[Login Error]", error)

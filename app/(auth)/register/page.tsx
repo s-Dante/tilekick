@@ -40,7 +40,7 @@ export default function RegisterPage() {
             }
 
             toast.success("¡Cuenta creada exitosamente!")
-            router.push("/home")
+            window.location.href = "/home"
         } catch {
             toast.error("Error de conexión con el servidor")
         } finally {

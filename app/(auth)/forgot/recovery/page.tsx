@@ -43,7 +43,7 @@ export default function RecoveryPage() {
             }
 
             toast.success("Contraseña actualizada. Ahora puedes iniciar sesión.")
-            router.push("/login")
+            window.location.href = "/login"
         } catch {
             toast.error("Error de conexión con el servidor")
         } finally {
